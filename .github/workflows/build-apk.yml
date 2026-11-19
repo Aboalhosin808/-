@@ -18,12 +18,9 @@ jobs:
       - name: Get llama.cpp Android engine
         run: |
           git clone --depth 1 https://github.com/ggml-org/llama.cpp.git engine-src
-          mkdir -p build-project
-          cp -a engine-src/examples/llama.android/. build-project/
-          cp -a engine-src/. build-project/llama.cpp/
 
       - name: Configure for Android 10+
-        working-directory: build-project
+        working-directory: engine-src/examples/llama.android
         run: |
           sed -i 's/minSdk = 33/minSdk = 29/g' app/build.gradle.kts lib/build.gradle.kts
           sed -i 's/applicationId = "com.example.llama.aichat"/applicationId = "com.aboalhosin.miniclaude"/' app/build.gradle.kts
@@ -35,8 +32,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK and NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: sdkmanager "ndk;29.0.13113456" "cmake;3.31.6"
+
       - name: Build debug APK
-        working-directory: build-project
+        working-directory: engine-src/examples/llama.android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :app:assembleDebug
@@ -45,6 +48,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Mini-Claude-Offline-APK
-          path: build-project/app/build/outputs/apk/debug/app-debug.apk
+          path: engine-src/examples/llama.android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
